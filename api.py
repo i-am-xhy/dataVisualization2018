@@ -1,6 +1,7 @@
 import falcon
 import pymysql.cursors
 import json
+from waitress import serve
 
 # WARNING this code is obviously not production worthy
 
@@ -66,3 +67,4 @@ api = falcon.API()
 api.add_route('/worldMap', WorldMapResource())
 api.add_route('/scatterPlot', ScatterPlotResource())
 api.add_route('/pieChart', PieChartResource())
+serve(api, listen='*:8080')
