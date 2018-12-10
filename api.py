@@ -1,10 +1,10 @@
 import falcon
-import mysql.connector
+import pymysql.cursors
 import json
 
 # WARNING this code is obviously not production worthy
 
-db = mysql.connector.connect(
+db = pymysql.connect(
     host="localhost",
     user="root",
     passwd="test123",
@@ -42,10 +42,24 @@ class WorldMapResource:
 
 
 class ScatterPlotResource:
-    scatterplotQuery = """SELECT Country, """
+    def on_get(self, req, resp):
+        scatterplot_query = """SELECT {Collection1}.Country, {Collection1}.amount, {Collection2}.amount 
+                              FROM {Collection1} JOIN {Collection2}
+                              ON {Collection1}.Country={Collection2}.Country
+                              AND {Collection1}.Year={Collection2}.Year
+                              WHERE {Collection1}.Year = {Year}
+                              """
+        full_query = scatterplot_query.format(**extract_data(req))
+        cursor.execute(full_query)
+        query_result = cursor.fetchall()
+        result = {'x-axis': [], 'y-axis': []}
+        for row in query_result:
+            result['x-axis'].append(row[1])
+            result['y-axis'].append(row[2])
+        resp.body = json.dumps(result)
 
 class PieChartResource:
-    piechartQuery = """"""
+    piechart_query = """"""
 
 
 api = falcon.API()
