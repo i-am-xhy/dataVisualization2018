@@ -16,9 +16,11 @@ CREATE TABLE Countries
 CREATE TABLE Population
 (
   Amount INT NOT NULL,
+  Unit VARCHAR(100) NOT NULL,
+  Type VARCHAR(100) NOT NULL,
   Year INT NOT NULL,
   Country VARCHAR(100) NOT NULL,
-  PRIMARY KEY (Year, Country),
+  PRIMARY KEY (Type, Year, Country),
   FOREIGN KEY (Year) REFERENCES Years(Year),
   FOREIGN KEY (Country) REFERENCES Countries(Country)
 );
@@ -32,12 +34,12 @@ CREATE TABLE FoodGroups
 
 CREATE TABLE Foods
 (
-  Production INT NOT NULL,
-  FoodName VARCHAR(100) NOT NULL,
-  ProductionUnit VARCHAR(100) NOT NULL,
+  Amount INT NOT NULL,
+  Type VARCHAR(100) NOT NULL,
+  Unit VARCHAR(100) NOT NULL,
   Year INT NOT NULL,
   Country VARCHAR(100) NOT NULL,
-  PRIMARY KEY (FoodName, Year, Country),
+  PRIMARY KEY (Type, Year, Country),
   FOREIGN KEY (Year) REFERENCES Years(Year),
   FOREIGN KEY (Country) REFERENCES Countries(Country)
 );
@@ -80,22 +82,24 @@ CREATE TABLE Fertilizers
 
 CREATE TABLE Emissions
 (
-  Co2eq INT NOT NULL,
+  Amount INT NOT NULL,
   Unit VARCHAR(100) NOT NULL,
-  FoodName VARCHAR(100) NOT NULL,
+  Type VARCHAR(100) NOT NULL,
   Year INT NOT NULL,
   Country VARCHAR(100) NOT NULL,
-  FOREIGN KEY (FoodName, Year, Country) REFERENCES Foods(FoodName, Year, Country)
+  PRIMARY KEY (Type, Year, Country),
+  FOREIGN KEY (Type, Year, Country) REFERENCES Foods(Type, Year, Country)
 );
 
 CREATE TABLE ValueOfProduction
 (
   Amount INT NOT NULL,
-  Currency VARCHAR(100) NOT NULL,
-  FoodName VARCHAR(100) NOT NULL,
+  Unit VARCHAR(100) NOT NULL,
+  Type VARCHAR(100) NOT NULL,
   Year INT NOT NULL,
   Country VARCHAR(100) NOT NULL,
-  FOREIGN KEY (FoodName, Year, Country) REFERENCES Foods(FoodName, Year, Country)
+  PRIMARY KEY (Type, Year, Country),
+  FOREIGN KEY (Type, Year, Country) REFERENCES Foods(Type, Year, Country)
 );
 
 CREATE TABLE Pesticides
@@ -137,11 +141,11 @@ CREATE TABLE Energy
 CREATE TABLE FoodGroupings
 (
   FoodGroupId INT NOT NULL,
-  FoodName VARCHAR(100) NOT NULL,
+  Type VARCHAR(100) NOT NULL,
   Year INT NOT NULL,
   Country VARCHAR(100) NOT NULL,
   FOREIGN KEY (FoodGroupId) REFERENCES FoodGroups(FoodGroupId),
-  FOREIGN KEY (FoodName, Year, Country) REFERENCES Foods(FoodName, Year, Country)
+  FOREIGN KEY (Type, Year, Country) REFERENCES Foods(Type, Year, Country)
 );
  ''', None)
 
@@ -161,25 +165,23 @@ def add_missing_foreign_keys(cursor, row):
     add_country_if_missing(cursor, row['Area'])
 
 def add_population_row(cursor, row):
-    if row['Element'] == 'Total Population - Both sexes':
+    if row['Item'] == 'Population - Est. & Proj.':
         add_missing_foreign_keys(cursor, row)
         population = int(float(row['Value']) * 1000)  # times 1000 to compensate for the unit being in thousands
-        # print(population)
-        # print(int(row['Year']))
-        cursor.execute('''INSERT INTO Population(Amount, Country, Year) VALUES (%s, %s, %s) ''',
-                       (population, row['Area'], int(row['Year'])))
+        cursor.execute('''INSERT INTO Population(Amount, Country, Year, Unit, Type) VALUES (%s, %s, %s, %s, %s) ''',
+                       (population, row['Area'], int(row['Year']), row['Unit'], row['Element']))
 
 def add_food_row(cursor, row):
     # aggregate columns to allow all units be stored
     if row['Unit'] == 'tonnes':
         add_missing_foreign_keys(cursor, row)
-        cursor.execute('''INSERT IGNORE INTO Foods(Production, FoodName, ProductionUnit, Year, Country) VALUES (%s, %s, %s, %s, %s)''',
+        cursor.execute('''INSERT IGNORE INTO Foods(Amount, Type, Unit, Year, Country) VALUES (%s, %s, %s, %s, %s)''',
                    (row['Value'], row['Item'], row['Unit'], row['Year'], row['Area']))
 
 def add_value_of_production_row(cursor, row):
     try:
         if row['Element'] == 'Gross Production Value (constant 2004-2006 1000 I$)':
-            cursor.execute('''INSERT INTO ValueOfProduction(Amount, Currency, FoodName, Year, Country) VALUES (%s, %s, %s, %s, %s)''',
+            cursor.execute('''INSERT INTO ValueOfProduction(Amount,Unit, Type, Year, Country) VALUES (%s, %s, %s, %s, %s)''',
                            (row['Value'], row['Unit'], row['Item'], row['Year'], row['Area']))
     except:
         pass
@@ -188,7 +190,7 @@ def add_emmissions(cursor, row):
     if row['Element'] == 'Emissions (CO2eq)':
         add_missing_foreign_keys(cursor, row)
         try:
-            cursor.execute('''INSERT INTO Emissions(Co2eq, Unit, FoodName, Year, Country) VALUES (%s, %s, %s, %s, %s)''',
+            cursor.execute('''INSERT INTO Emissions(Amount, Unit, Type, Year, Country) VALUES (%s, %s, %s, %s, %s)''',
                    (row['Value'], row['Unit'], row['Item'], row['Year'], row['Area']))
         except:
             # print("this emissions' foodstuff may be mislabeled in faostat")

@@ -26,6 +26,10 @@ def extract_data(req):
 
 class WorldMapResource:
     def on_get(self, req, resp):
+        resp.set_header('Access-Control-Allow-Origin', '*')
+        resp.set_header('Access-Control-Allow-Methods', '*')
+        resp.set_header('Access-Control-Allow-Headers', '*')
+        resp.set_header('Access-Control-Max-Age', '1728000')  # 20 days
         worldmap_query = '''SELECT Country, Amount FROM {Collection1} WHERE Year={Year}'''
         print(extract_data(req))
         full_query = worldmap_query.format(**extract_data(req))
@@ -44,6 +48,10 @@ class WorldMapResource:
 
 class ScatterPlotResource:
     def on_get(self, req, resp):
+        resp.set_header('Access-Control-Allow-Origin', '*')
+        resp.set_header('Access-Control-Allow-Methods', '*')
+        resp.set_header('Access-Control-Allow-Headers', '*')
+        resp.set_header('Access-Control-Max-Age', '1728000')  # 20 days
         scatterplot_query = """SELECT {Collection1}.Country, {Collection1}.amount, {Collection2}.amount 
                               FROM {Collection1} JOIN {Collection2}
                               ON {Collection1}.Country={Collection2}.Country
@@ -60,7 +68,23 @@ class ScatterPlotResource:
         resp.body = json.dumps(result)
 
 class PieChartResource:
-    piechart_query = """"""
+    def on_get(self, req, resp):
+        resp.set_header('Access-Control-Allow-Origin', '*')
+        resp.set_header('Access-Control-Allow-Methods', '*')
+        resp.set_header('Access-Control-Allow-Headers', '*')
+        resp.set_header('Access-Control-Max-Age', '1728000')  # 20 days
+        piechart_query = '''SELECT Country, Amount FROM {Collection1} WHERE Year={Year}'''
+        full_query = piechart_query.format(**extract_data(req))
+        cursor.execute(full_query)
+        query_result = cursor.fetchall()
+        result = []
+        for row in query_result:
+            row_result = {
+                'Label': row[0],
+                'Amount': row[1]
+            }
+            result.append(row_result)
+        resp.body = json.dumps(result)
 
 
 api = falcon.API()

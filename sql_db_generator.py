@@ -1,9 +1,9 @@
 import csv
-import mysql.connector
+import pymysql.cursors
 from db_funcs import *
 from itertools import chain
 
-db = mysql.connector.connect(
+db = pymysql.connect(
     host="localhost",
     user="root",
     passwd="test123",
@@ -19,7 +19,7 @@ path = "C:\\Users\\Niels\\Documents\\data visualization\\datasets\\"
 #the part of the string that is always the same for faostat normalized data
 post_file_name = '_E_All_Data_(Normalized).csv'
 extraction_structure = {
-    'Population': ['Area', 'Year', 'Unit', 'Value', 'Element'],
+    'Population': ['Area', 'Year', 'Unit', 'Value', 'Element', 'Item'],
     'Production_Crops': ['Area', 'Item', 'Element', 'Year', 'Value', 'Unit'],
     'Production_Livestock': ['Area', 'Item', 'Element', 'Year', 'Value', 'Unit'],
     'Value_of_Production': ['Area', 'Item', 'Year', 'Value', 'Element', 'Unit'],
@@ -68,7 +68,7 @@ for row in chain(result['Production_Crops'], result['Production_Livestock']):
 for row in result['Value_of_Production']:
     add_value_of_production_row(cursor, row)
 
-# todo decide what to do with emissions (mismatching Item compared to rest of data)
+# # todo decide what to do with emissions (mismatching Item compared to rest of data)
 for row in result['Environment_Emissions_intensities']:
     add_emmissions(cursor, row)
 
